@@ -1,0 +1,135 @@
+---
+title: "4 lab"
+author: "Manin Egor Ri-450005"
+date: '8 ноября 2018 г '
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+data <- read.csv("https://archive.ics.uci.edu/ml/machine-learning-databases/abalone/abalone.data", header=TRUE, sep=",")
+summary(data)
+colnames(data)
+colnames(data) <- c("sex", "length", "diameter", "height", 
+                "whole_weight", "shucked_weight",
+                "viscera_weight", "shell_weight", "rings")
+
+colnames(data)
+data$sex <- factor(c("Female", "Infant", "Male")[data$sex])
+par(mfrow=c(1,3)) 
+hist(data$diameter, main = "Диаметр, мм")
+hist(data$height, main = "Высота, мм")
+hist(data$whole_weight, main = "Полный вес, гр")
+#Видим ассиметрию https://en.wikipedia.org/wiki/Skewness
+#и выбросы (от них нужно избавиться)
+
+#Визулизируем возможные зависимости
+par(mfrow=c(1,2)) 
+plot(data$diameter, data$whole_weight,'p',main = "Зависимость веса от диаметра")
+plot(data$height, data$whole_weight,'p',main = "Зависимость веса от высоты")
+```
+Построение линейных моделей
+```{r}
+linear.model.1 <- lm(data$diameter ~ data$whole_weight)
+summary(linear.model.1)
+plot(linear.model.1)
+```
+```{r}
+linear.model.2 <- lm(data$height ~ data$whole_weight)
+summary(linear.model.2)
+plot(linear.model.2)
+```
+```{r}
+linear.model.2 <- lm(data$whole_weight ~ .,data=data)
+summary(linear.model.2)
+plot(linear.model.2)
+```
+Профильтруем данные
+```{r}
+data<-data[data$height<=0.18&data$height>0.08,]
+hist(data$height)
+```
+```{r}
+data<-data[data$diameter<=0.52&data$diameter>0.26,]
+hist(data$diameter)
+```
+```{r}
+data<-data[data$whole_weight<=1.4&data$whole_weight>0.2,]
+hist(data$whole_weight)
+```
+Посмотрим еще раз линейные модели
+```{r}
+linear.model.1 <- lm(data$diameter ~ data$whole_weight)
+summary(linear.model.1)
+plot(linear.model.1)
+```
+```{r}
+linear.model.2 <- lm(data$height ~ data$whole_weight)
+summary(linear.model.2)
+plot(linear.model.2)
+```
+```{r}
+linear.model.3 <- lm(data$whole_weight ~ .,data=data)
+summary(linear.model.3)
+plot(linear.model.3)
+```
+Разделим на четные и нечетные строки
+```{r}
+odds <- seq(1, nrow(data), by=2)
+oddrow <- data[odds,]
+evenrow <- data[-odds,]
+```
+Lm from odds using diameter
+```{r}
+oddmodel1 <- lm(oddrow$diameter ~ oddrow$whole_weight)
+summary(oddmodel1)
+```
+Predict
+```{r}
+predict1 <- predict(oddmodel1)
+cor(oddrow$whole_weight, predict1)
+plot(oddrow$whole_weight, predict1)
+```
+```{r}
+totalpredict1 <- predict(oddmodel1, evenrow)
+cor(evenrow$whole_weight, totalpredict1)
+plot(evenrow$whole_weight, totalpredict1)
+```
+Значение корреляции вышло `r cor(evenrow$whole_weight, totalpredict1)`, что показывает слабую связанность выбранных двух параметров 
+Lm from odds using height
+```{r}
+oddmodel2 <- lm(oddrow$height ~ oddrow$whole_weight)
+summary(oddmodel2)
+```
+Predict
+```{r}
+predict2 <- predict(oddmodel2)
+cor(oddrow$whole_weight, predict2)
+plot(oddrow$whole_weight, predict2)
+```
+```{r}
+totalpredict2 <- predict(oddmodel2, evenrow)
+cor(evenrow$whole_weight, totalpredict2)
+plot(evenrow$whole_weight, totalpredict2)
+```
+Значение корреляции вышло `r cor(evenrow$whole_weight, totalpredict2)`, что показывает слабую связанность выбранных двух параметров 
+Lm from odds using all data
+```{r}
+oddmodel3 <- lm(oddrow$whole_weight ~ .,data=oddrow)
+summary(oddmodel3)
+```
+Predict
+```{r}
+predict3 <- predict(oddmodel3)
+cor(oddrow$whole_weight, predict3)
+plot(oddrow$whole_weight, predict3)
+```
+```{r}
+totalpredict3 <- predict(oddmodel3, evenrow)
+cor(evenrow$whole_weight, totalpredict3)
+plot(evenrow$whole_weight, totalpredict3)
+```
+Значение корреляции вышло `r cor(evenrow$whole_weight, totalpredict3)`, что показывает наличие зависимости между исследуемыми параметрами
